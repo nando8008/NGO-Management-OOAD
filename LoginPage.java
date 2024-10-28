@@ -1,83 +1,67 @@
-import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
 import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.HashMap;
 import java.util.List;
 
-public class LoginPage implements ActionListener {
+public class LoginPage extends JFrame {
+    private JTextField usernameField;
+    private JPasswordField passwordField;
+    private HashMap<String, String> loginInfo;
+    private List<Event> events;
+    private List<String> volunteers;
 
-    JFrame frame = new JFrame();
-    JButton loginButton = new JButton("Login");
-    JButton resetButton = new JButton("Reset");
-    JTextField userIDField = new JTextField();
-    JPasswordField userPasswordField = new JPasswordField();
-    JLabel userIDLabel = new JLabel("userID:");
-    JLabel userPasswordLabel = new JLabel("password:");
-    JLabel messageLabel = new JLabel();
-    HashMap<String, String> logininfo = new HashMap<>();
-    List<Event> events;
+    public LoginPage(HashMap<String, String> loginInfo, List<Event> events, List<String> volunteers) {
+        this.loginInfo = loginInfo;
+        this.events = events;
+        this.volunteers = volunteers;
 
-    public LoginPage(HashMap<String, String> loginInfoOriginal, List<Event> eventsList) {
-        logininfo = loginInfoOriginal;
-        events = eventsList;
-        setupUI();
-    }
+        setTitle("Login Page");
+        setSize(300, 200);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new GridLayout(4, 2));
 
-    private void setupUI() {
-        userIDLabel.setBounds(50, 100, 75, 25);
-        userPasswordLabel.setBounds(50, 150, 75, 25);
-        messageLabel.setBounds(125, 250, 250, 35);
-        messageLabel.setFont(new Font(null, Font.ITALIC, 25));
+        JLabel usernameLabel = new JLabel("Username:");
+        usernameField = new JTextField();
+        JLabel passwordLabel = new JLabel("Password:");
+        passwordField = new JPasswordField();
 
-        userIDField.setBounds(125, 100, 200, 25);
-        userPasswordField.setBounds(125, 150, 200, 25);
+        JButton loginButton = new JButton("Login");
+        JButton guestButton = new JButton("Continue as Guest");
 
-        loginButton.setBounds(125, 200, 100, 25);
-        loginButton.addActionListener(this);
+        loginButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                String username = usernameField.getText();
+                String password = new String(passwordField.getPassword());
 
-        resetButton.setBounds(225, 200, 100, 25);
-        resetButton.addActionListener(this);
-
-        frame.add(userIDLabel);
-        frame.add(userPasswordLabel);
-        frame.add(messageLabel);
-        frame.add(userIDField);
-        frame.add(userPasswordField);
-        frame.add(loginButton);
-        frame.add(resetButton);
-
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(420, 420);
-        frame.setLayout(null);
-        frame.setVisible(true);
-    }
-
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == resetButton) {
-            userIDField.setText("");
-            userPasswordField.setText("");
-        }
-
-        if (e.getSource() == loginButton) {
-            String userID = userIDField.getText();
-            String password = String.valueOf(userPasswordField.getPassword());
-
-            if (logininfo.containsKey(userID)) {
-                if (logininfo.get(userID).equals(password)) {
-                    messageLabel.setForeground(Color.green);
-                    messageLabel.setText("Login successful");
-                    frame.dispose();
-                    new WelcomePage(userID, events);
+                if (loginInfo.containsKey(username) && loginInfo.get(username).equals(password)) {
+                    if (username.equals("admin")) {
+                        // Pass both events and volunteers to AdminPage
+                        new AdminPage(events, volunteers).setVisible(true);
+                    } else {
+                        new WelcomePage(username, events, volunteers).setVisible(true);
+                    }
+                    dispose(); // Close the login page
                 } else {
-                    messageLabel.setForeground(Color.red);
-                    messageLabel.setText("Wrong password");
+                    JOptionPane.showMessageDialog(null, "Invalid credentials");
                 }
-            } else {
-                messageLabel.setForeground(Color.red);
-                messageLabel.setText("Username not found");
             }
-        }
+        });
+
+        guestButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                new PublicEventsPage(events).setVisible(true);
+                dispose(); // Close the login page
+            }
+        });
+
+        add(usernameLabel);
+        add(usernameField);
+        add(passwordLabel);
+        add(passwordField);
+        add(loginButton);
+        add(guestButton);
     }
 }
 

@@ -1,37 +1,25 @@
-import java.awt.*;
-import java.awt.event.*;
 import javax.swing.*;
-import java.util.List;
-import java.util.ArrayList;
 
+public class EnrollmentPage extends JFrame {
+    public EnrollmentPage(Event event) {
+        setTitle("Enroll in " + event.getName());
+        setSize(300, 200);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
 
-public class EnrollmentPage {
+        JLabel eventLabel = new JLabel("Enroll in " + event.getName());
+        eventLabel.setAlignmentX(CENTER_ALIGNMENT);
 
-    JFrame frame = new JFrame();
-    JLabel successLabel = new JLabel("Successfully enrolled in the event!");
-    JButton homeButton = new JButton("Go to Home");
-
-    EnrollmentPage(String userID, List<Event> events) {
-        // Setup the frame
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(300, 200);
-        frame.setLayout(new FlowLayout());
-
-        // Add success label
-        successLabel.setFont(new Font(null, Font.BOLD, 16));
-        frame.add(successLabel);
-
-        // Home button action
-        homeButton.addActionListener(e -> {
-            frame.dispose();
-            new WelcomePage(userID, events);  // Go back to the WelcomePage
+        JButton confirmButton = new JButton("Confirm Enrollment");
+        confirmButton.setAlignmentX(CENTER_ALIGNMENT);
+        confirmButton.addActionListener(e -> {
+            JOptionPane.showMessageDialog(this, "You are enrolled in " + event.getName() + "!");
+            dispose(); // Close window after confirmation
         });
-        
-        // Add home button
-        frame.add(homeButton);
-        
-        // Make frame visible
-        frame.setVisible(true);
+
+        add(eventLabel);
+        add(Box.createVerticalStrut(20));
+        add(confirmButton);
     }
 }
 

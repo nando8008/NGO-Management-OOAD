@@ -1,37 +1,35 @@
-import java.awt.*;
 import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
-public class ButtonEditor extends DefaultCellEditor {
+class ButtonEditor extends DefaultCellEditor {
     private JButton button;
-    private String eventName;
-    private WelcomePage welcomePage;  // Reference to WelcomePage
+    private String label;
+    private boolean isPushed;
 
     public ButtonEditor(JCheckBox checkBox, WelcomePage welcomePage) {
         super(checkBox);
-        this.welcomePage = welcomePage;
-
         button = new JButton();
         button.setOpaque(true);
-
-        // Add action listener for button clicks
-        button.addActionListener(e -> fireEditingStopped());
+        button.addActionListener(e -> {
+            if (isPushed) {
+                welcomePage.showEnrollmentPopup(label);
+            }
+            isPushed = false;
+        });
     }
 
-    @Override
-    public Component getTableCellEditorComponent(
-        JTable table, Object value, boolean isSelected, int row, int column
-    ) {
-        eventName = table.getValueAt(row, 0).toString();  // Get event name
-        button.setText((value == null) ? "Enroll" : value.toString());
+    public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+        label = (value == null) ? "" : value.toString();
+        button.setText(label);
+        isPushed = true;
         return button;
     }
 
-    @Override
     public Object getCellEditorValue() {
-        welcomePage.showEnrollmentPopup(eventName);  // Show popup
-        return eventName;
+        isPushed = false;
+        return label;
     }
 }
-
-
 

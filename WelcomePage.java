@@ -1,25 +1,24 @@
-import java.awt.*;
-import java.awt.event.*;
-import java.util.List;
-import java.util.stream.Collectors;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.util.List;
+import java.util.stream.Collectors;
 
-public class WelcomePage {
+public class WelcomePage extends JFrame {
+    private JLabel welcomeLabel = new JLabel("Welcome to the NGO Management System!");
+    private JTextField searchField = new JTextField();
+    private JComboBox<String> filterComboBox = new JComboBox<>(new String[]{"Name", "Date", "Type"});
+    private JButton searchButton = new JButton("Search");
+    private JButton publicViewButton = new JButton("Public Login");
 
-    JFrame frame = new JFrame();
-    JLabel welcomeLabel = new JLabel("Welcome to the NGO Management System!");
+    private DefaultTableModel tableModel;
+    private JTable eventTable;
+    private List<Event> events;
+    private List<String> volunteers;
 
-    JTextField searchField = new JTextField();
-    JComboBox<String> filterComboBox = new JComboBox<>(new String[]{"Name", "Date", "Type"});
-    JButton searchButton = new JButton("Search");
-
-    DefaultTableModel tableModel;
-    JTable eventTable;
-    List<Event> events;
-
-    public WelcomePage(String userID, List<Event> eventsList) {
+    public WelcomePage(String userID, List<Event> eventsList, List<String> volunteersList) {
         this.events = eventsList;
+        this.volunteers = volunteersList; 
 
         setupUI();
         displayEvents(events);
@@ -33,11 +32,13 @@ public class WelcomePage {
         welcomeLabel.setBounds(20, 10, 400, 25);
         welcomeLabel.setFont(new Font(null, Font.PLAIN, 20));
 
-        // Set up search components
         searchField.setBounds(20, 50, 200, 25);
         filterComboBox.setBounds(230, 50, 100, 25);
         searchButton.setBounds(340, 50, 100, 25);
         searchButton.addActionListener(e -> performSearch());
+
+        publicViewButton.setBounds(450, 50, 120, 25);
+        publicViewButton.addActionListener(e -> new PublicEventsPage(events).setVisible(true));
 
         String[] columnNames = {"Name", "Date", "Type", "Action"};
         tableModel = new DefaultTableModel(columnNames, 0);
@@ -46,20 +47,20 @@ public class WelcomePage {
         JScrollPane scrollPane = new JScrollPane(eventTable);
         scrollPane.setBounds(20, 90, 960, 300);
 
-        frame.add(welcomeLabel);
-        frame.add(searchField);
-        frame.add(filterComboBox);
-        frame.add(searchButton);
-        frame.add(scrollPane);
+        add(welcomeLabel);
+        add(searchField);
+        add(filterComboBox);
+        add(searchButton);
+        add(publicViewButton); 
+        add(scrollPane);
 
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(1000, 500);
-        frame.setLayout(null);
-        frame.setVisible(true);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(1000, 500);
+        setLayout(null);
     }
 
     private void displayEvents(List<Event> eventsToShow) {
-        tableModel.setRowCount(0);  // Clear the table
+        tableModel.setRowCount(0);
 
         for (Event event : eventsToShow) {
             tableModel.addRow(new Object[]{
@@ -70,9 +71,8 @@ public class WelcomePage {
 
     private void performSearch() {
         String query = searchField.getText().toLowerCase();
-        String filter = filterComboBox.getSelectedItem().toString();
+        String filter = (String) filterComboBox.getSelectedItem();
 
-        // Filter the events based on the selected filter and query
         List<Event> filteredEvents = events.stream()
                 .filter(event -> {
                     switch (filter) {
@@ -88,24 +88,16 @@ public class WelcomePage {
                 })
                 .collect(Collectors.toList());
 
-        // Display the filtered events
         displayEvents(filteredEvents);
     }
 
     public void showEnrollmentPopup(String eventName) {
         JOptionPane.showMessageDialog(
-            frame,
+            this,
             "Successfully enrolled in " + eventName + "!",
             "Enrollment Successful",
             JOptionPane.INFORMATION_MESSAGE
         );
     }
 }
-
-
-
-
-
-
-
 
