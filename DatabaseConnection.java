@@ -8,10 +8,9 @@ public class DatabaseConnection {
     private static final String PASSWORD = "9KPscB3RvHQd";
     private static final String SSL_MODE = "require";
 
-    // Method to establish a new connection each time
     public static Connection connect() {
         try {
-        	System.out.println("Connected to the database.");
+            System.out.println("Connected to the database.");
             return DriverManager.getConnection(URL + "?sslmode=" + SSL_MODE, USER, PASSWORD);
         } catch (SQLException e) {
             System.out.println("Failed to connect to the database.");
@@ -20,7 +19,6 @@ public class DatabaseConnection {
         }
     }
 
-    // Method to disconnect from the database
     public static void disconnect(Connection connection) {
         if (connection != null) {
             try {
@@ -33,6 +31,7 @@ public class DatabaseConnection {
         }
     }
 }
+
 
 
 

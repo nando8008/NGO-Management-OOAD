@@ -11,14 +11,12 @@ public class PublicEventsPage extends JFrame {
 
         for (Event event : events) {
             JLabel eventLabel = new JLabel(event.getName());
-            JButton enrollButton = new JButton("Enroll");
             JButton donateButton = new JButton("Donate");
 
-            enrollButton.addActionListener(e -> JOptionPane.showMessageDialog(this, "Enrolled in " + event.getName()));
+    
             donateButton.addActionListener(e -> JOptionPane.showMessageDialog(this, "Donated to " + event.getName()));
 
             add(eventLabel);
-            add(enrollButton);
             add(donateButton);
         }
     }
