@@ -5,13 +5,11 @@ import java.awt.event.ActionListener;
 import java.util.List;
 
 public class AdminPage extends JFrame {
-    private List<Event> events;
     private List<String> volunteers;
     private JButton manageEventsButton;
     private JButton manageVolunteersButton;
 
-    public AdminPage(List<Event> events, List<String> volunteers) {
-        this.events = events;
+    public AdminPage(List<String> volunteers) {
         this.volunteers = volunteers;
         
         setTitle("Admin Page");
@@ -22,7 +20,10 @@ public class AdminPage extends JFrame {
         manageEventsButton = createSizedButton("Manage Events", 150, 40);
         manageVolunteersButton = createSizedButton("Manage Volunteers", 150, 40);
 
-        manageEventsButton.addActionListener(e -> new ManageEventPage(events).setVisible(true));
+        // Open ManageEventPage without passing events, as it fetches events directly from the database
+        manageEventsButton.addActionListener(e -> new ManageEventPage().setVisible(true));
+        
+        // Open ManageVolunteerPage, passing the volunteers list
         manageVolunteersButton.addActionListener(e -> new ManageVolunteerPage(volunteers).setVisible(true));
 
         add(manageEventsButton);

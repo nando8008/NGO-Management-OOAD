@@ -4,37 +4,58 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-public class ButtonEditor extends DefaultCellEditor {
+public class ButtonEditor extends DefaultCellEditor implements TableCellEditor {
     private JButton button;
-    private String eventName;
+    private String label;
     private boolean isPushed;
-    private WelcomePage parentPage;
+    private WelcomePage welcomePage;
+    private int eventId;
+    private String eventName;
 
-    public ButtonEditor(JCheckBox checkBox, WelcomePage parentPage) {
+    public ButtonEditor(JCheckBox checkBox, WelcomePage welcomePage) {
         super(checkBox);
-        this.parentPage = parentPage;
-
+        this.welcomePage = welcomePage;
         button = new JButton();
         button.setOpaque(true);
         button.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                fireEditingStopped();
+                fireEditingStopped(); // Stop editing when button is pressed
+                // Handle the button click action
+                if (eventId != -1 && welcomePage.isEnrolled(eventId)) {
+                    JOptionPane.showMessageDialog(button, "You are already enrolled.");
+                } else if (eventName != null && welcomePage.isEnrolled(eventName)) {
+                    JOptionPane.showMessageDialog(button, "You are already enrolled.");
+                } else {
+                    // Add enrollment logic
+                    if (eventId != -1) {
+                        welcomePage.updateEnrollmentStatus(eventId);
+                    } else if (eventName != null) {
+                        welcomePage.updateEnrollmentStatus(eventName);
+                    }
+                }
             }
         });
     }
 
     @Override
-    public Component getTableCellEditorComponent(JTable table, Object value,
-                                                 boolean isSelected, int row, int column) {
-        if (isSelected) {
-            button.setForeground(table.getSelectionForeground());
-            button.setBackground(table.getSelectionBackground());
-        } else {
-            button.setForeground(table.getForeground());
-            button.setBackground(table.getBackground());
+    public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+        label = (value == null) ? "Enroll" : value.toString();
+        button.setText(label);
+
+        // Reset variables
+        eventId = -1;
+        eventName = null;
+
+        // Get the event ID or name for the current row
+        Object cellValue = table.getValueAt(row, 0);
+        if (cellValue instanceof Integer) {
+            eventId = (Integer) cellValue;
+            System.out.println("Event ID: " + eventId);
+        } else if (cellValue instanceof String) {
+            eventName = (String) cellValue;
+            System.out.println("Event Name: " + eventName);
         }
-        eventName = (value == null) ? "" : value.toString();
-        button.setText(eventName);
+
         isPushed = true;
         return button;
     }
@@ -42,10 +63,10 @@ public class ButtonEditor extends DefaultCellEditor {
     @Override
     public Object getCellEditorValue() {
         if (isPushed) {
-            parentPage.showEnrollmentPopup(eventName);  // Call the popup method
+            // Perform action if button was pushed
         }
         isPushed = false;
-        return eventName;
+        return label;
     }
 
     @Override

@@ -2,11 +2,13 @@ public class Event {
     private String name;
     private String date;
     private String type;
+    private int id;
 
-    public Event(String name, String date, String type) {
+    public Event(String name, String date, String type, int id) {
         this.name = name;
         this.date = date;
         this.type = type;
+        this.id = id;
     }
 
     public String getName() {
@@ -21,8 +23,7 @@ public class Event {
         return type;
     }
 
-    @Override
-    public String toString() {
-        return name + " on " + date + " (" + type + ")";
+    public int getId() {
+        return id;
     }
 }
