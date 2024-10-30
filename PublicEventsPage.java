@@ -13,6 +13,7 @@ public class PublicEventsPage extends JFrame {
     private JTable eventTable;
     private List<Event> events;
     private JButton submitButton;
+    private JButton queriesButton;
 
     public PublicEventsPage(List<Event> events) {
         this.events = events;
@@ -20,10 +21,7 @@ public class PublicEventsPage extends JFrame {
         setSize(600, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        // Define column names for the event table
         String[] columnNames = {"Event Name", "Event Date", "Event Type", "Action"};
-
-        // Create a table model
         DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0);
         eventTable = new JTable(tableModel) {
             @Override
@@ -32,56 +30,39 @@ public class PublicEventsPage extends JFrame {
             }
         };
 
-        // Populate the table with event data and buttons
         for (Event event : events) {
-            Object[] rowData = {
-                event.getName(),
-                event.getDate(),
-                event.getType(),
-                "Donate" // Placeholder for the button
-            };
+            Object[] rowData = {event.getName(), event.getDate(), event.getType(), "Donate"};
             tableModel.addRow(rowData);
         }
 
-        // Set the table to a scroll pane
         JScrollPane scrollPane = new JScrollPane(eventTable);
         eventTable.setFillsViewportHeight(true);
-
-        // Set custom cell renderer for the action button
         eventTable.getColumnModel().getColumn(3).setCellRenderer(new ButtonRenderer());
         eventTable.getColumnModel().getColumn(3).setCellEditor(new ButtonEditor(new JCheckBox(), events));
 
-        // Add Submit Project button with a fixed size, centered
         submitButton = new JButton("Submit Project");
-        submitButton.setPreferredSize(new Dimension(120, 30)); // Fixed size for small button
-        submitButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                openSubmissionDialog();
-            }
-        });
+        submitButton.setPreferredSize(new Dimension(120, 30));
+        submitButton.addActionListener(e -> openSubmissionDialog());
 
-        // Create a panel to hold the button and keep it from stretching
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER)); // Center the button
+        queriesButton = new JButton("Queries");
+        queriesButton.setPreferredSize(new Dimension(120, 30));
+        queriesButton.addActionListener(e -> new PublicQuery().setVisible(true)); // Opens the Queries page
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         buttonPanel.add(submitButton);
+        buttonPanel.add(queriesButton);
 
-        // Add components to the frame
-        add(scrollPane, BorderLayout.CENTER); // Add the table
-        add(buttonPanel, BorderLayout.SOUTH); // Add the button panel
+        add(scrollPane, BorderLayout.CENTER);
+        add(buttonPanel, BorderLayout.SOUTH);
     }
 
     private void openSubmissionDialog() {
         JTextField eventNameField = new JTextField();
         JTextField eventTypeField = new JTextField();
 
-        Object[] message = {
-            "Event Name:", eventNameField,
-            "Event Type:", eventTypeField
-        };
+        Object[] message = {"Event Name:", eventNameField, "Event Type:", eventTypeField};
 
-        int option = JOptionPane.showConfirmDialog(
-                this, message, "Enter Event Details", JOptionPane.OK_CANCEL_OPTION);
-
+        int option = JOptionPane.showConfirmDialog(this, message, "Enter Event Details", JOptionPane.OK_CANCEL_OPTION);
         if (option == JOptionPane.OK_OPTION) {
             String eventName = eventNameField.getText().trim();
             String eventType = eventTypeField.getText().trim();
@@ -125,8 +106,7 @@ public class PublicEventsPage extends JFrame {
         }
 
         @Override
-        public Component getTableCellRendererComponent(JTable table, Object value,
-                                                       boolean isSelected, boolean hasFocus, int row, int column) {
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             setText((value == null) ? "Donate" : value.toString());
             return this;
         }
@@ -144,22 +124,18 @@ public class PublicEventsPage extends JFrame {
             button = new JButton();
             button.setOpaque(true);
             button.setBackground(UIManager.getColor("Button.background"));
-            button.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    fireEditingStopped();
-                    int row = eventTable.getSelectedRow();
-                    if (row >= 0) {
-                        Event event = events.get(row);
-                        JOptionPane.showMessageDialog(button, "Donated to " + event.getName());
-                    }
+            button.addActionListener(e -> {
+                fireEditingStopped();
+                int row = eventTable.getSelectedRow();
+                if (row >= 0) {
+                    Event event = events.get(row);
+                    JOptionPane.showMessageDialog(button, "Donated to " + event.getName());
                 }
             });
         }
 
         @Override
-        public Component getTableCellEditorComponent(JTable table, Object value,
-                                                     boolean isSelected, int row, int column) {
+        public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
             label = (value == null) ? "Donate" : value.toString();
             button.setText(label);
             isPushed = true;

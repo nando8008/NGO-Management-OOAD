@@ -7,6 +7,7 @@ public class AdminPage extends JFrame {
     private JButton manageEventsButton;
     private JButton manageVolunteersButton;
     private JButton checkSubmittedProjectsButton;
+    private JButton answerQueryButton;
 
     public AdminPage(List<String> volunteers) {
         this.volunteers = volunteers;
@@ -20,6 +21,7 @@ public class AdminPage extends JFrame {
         manageEventsButton = createSizedButton("Manage Events", 150, 40);
         manageVolunteersButton = createSizedButton("Manage Volunteers", 150, 40);
         checkSubmittedProjectsButton = createSizedButton("Check Projects", 150, 40);
+        answerQueryButton = createSizedButton("Answer Query", 150, 40);
 
         // Action for managing events
         manageEventsButton.addActionListener(e -> new ManageEventPage().setVisible(true));
@@ -30,10 +32,14 @@ public class AdminPage extends JFrame {
         // Action for checking submitted projects
         checkSubmittedProjectsButton.addActionListener(e -> new ProposedProject().setVisible(true));
 
+        // Action for answering queries
+        answerQueryButton.addActionListener(e -> new ManageQueries().setVisible(true));
+
         // Add buttons to the frame
         add(manageEventsButton);
         add(manageVolunteersButton);
         add(checkSubmittedProjectsButton);
+        add(answerQueryButton);
     }
 
     // Helper method to create buttons with consistent size and appearance
