@@ -26,7 +26,6 @@ public class PublicEventsPage extends JFrame {
         // Create a table model
         DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0);
         eventTable = new JTable(tableModel) {
-            // Disable editing for all cells
             @Override
             public boolean isCellEditable(int row, int column) {
                 return column == 3; // Only allow the action button to be editable
@@ -52,8 +51,9 @@ public class PublicEventsPage extends JFrame {
         eventTable.getColumnModel().getColumn(3).setCellRenderer(new ButtonRenderer());
         eventTable.getColumnModel().getColumn(3).setCellEditor(new ButtonEditor(new JCheckBox(), events));
 
-        // Add Submit Project button
+        // Add Submit Project button with a fixed size, centered
         submitButton = new JButton("Submit Project");
+        submitButton.setPreferredSize(new Dimension(120, 30)); // Fixed size for small button
         submitButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -61,12 +61,15 @@ public class PublicEventsPage extends JFrame {
             }
         });
 
+        // Create a panel to hold the button and keep it from stretching
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER)); // Center the button
+        buttonPanel.add(submitButton);
+
         // Add components to the frame
         add(scrollPane, BorderLayout.CENTER); // Add the table
-        add(submitButton, BorderLayout.SOUTH); // Add the Submit Project button
+        add(buttonPanel, BorderLayout.SOUTH); // Add the button panel
     }
 
-    // Method to open the submission dialog and collect event details
     private void openSubmissionDialog() {
         JTextField eventNameField = new JTextField();
         JTextField eventTypeField = new JTextField();
@@ -91,7 +94,6 @@ public class PublicEventsPage extends JFrame {
         }
     }
 
-    // Method to insert event details into the database
     private void insertProjectIntoDatabase(String eventName, String eventType) {
         Connection conn = DatabaseConnection.connect();
         if (conn != null) {
@@ -116,11 +118,10 @@ public class PublicEventsPage extends JFrame {
         }
     }
 
-    // Custom renderer to display a button in the cell
     class ButtonRenderer extends JButton implements TableCellRenderer {
         public ButtonRenderer() {
             setOpaque(true);
-            setBackground(UIManager.getColor("Button.background")); // Use default button color
+            setBackground(UIManager.getColor("Button.background"));
         }
 
         @Override
@@ -131,7 +132,6 @@ public class PublicEventsPage extends JFrame {
         }
     }
 
-    // Custom editor to handle button clicks
     class ButtonEditor extends DefaultCellEditor {
         private JButton button;
         private String label;
@@ -143,11 +143,11 @@ public class PublicEventsPage extends JFrame {
             this.events = events;
             button = new JButton();
             button.setOpaque(true);
-            button.setBackground(UIManager.getColor("Button.background")); // Use default button color
+            button.setBackground(UIManager.getColor("Button.background"));
             button.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    fireEditingStopped(); // Stop editing and notify listeners
+                    fireEditingStopped();
                     int row = eventTable.getSelectedRow();
                     if (row >= 0) {
                         Event event = events.get(row);
