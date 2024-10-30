@@ -9,12 +9,13 @@ public class AdminPage extends JFrame {
     private JButton checkSubmittedProjectsButton;
     private JButton answerQueryButton;
     private JButton managePastEventsButton;
+    private JButton sendInfoToSponsorsButton;
 
     public AdminPage(List<String> volunteers) {
         this.volunteers = volunteers;
         
         setTitle("Admin Page");
-        setSize(400, 300);
+        setSize(400, 350); // Adjusted size to accommodate the new button
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new FlowLayout());
 
@@ -23,7 +24,8 @@ public class AdminPage extends JFrame {
         manageVolunteersButton = createSizedButton("Manage Volunteers", 150, 40);
         checkSubmittedProjectsButton = createSizedButton("Check Projects", 150, 40);
         answerQueryButton = createSizedButton("Answer Query", 150, 40);
-        managePastEventsButton = createSizedButton("Manage Past Events", 150, 40);  // New Button
+        managePastEventsButton = createSizedButton("Manage Past Events", 150, 40);
+        sendInfoToSponsorsButton = createSizedButton("Manage Sponsors", 180, 40);
 
         // Action for managing events
         manageEventsButton.addActionListener(e -> new ManageEventPage().setVisible(true));
@@ -38,14 +40,18 @@ public class AdminPage extends JFrame {
         answerQueryButton.addActionListener(e -> new ManageQueries().setVisible(true));
         
         // Action for managing past events
-        managePastEventsButton.addActionListener(e -> new ManagePastEvents().setVisible(true));  // New Action
+        managePastEventsButton.addActionListener(e -> new ManagePastEvents().setVisible(true));
+        
+        // Action for sending info to sponsors
+        sendInfoToSponsorsButton.addActionListener(e -> new SponsorPage().setVisible(true));
 
         // Add buttons to the frame
         add(manageEventsButton);
         add(manageVolunteersButton);
         add(checkSubmittedProjectsButton);
         add(answerQueryButton);
-        add(managePastEventsButton); // Add new button to frame
+        add(managePastEventsButton);
+        add(sendInfoToSponsorsButton);
     }
 
     // Helper method to create buttons with consistent size and appearance

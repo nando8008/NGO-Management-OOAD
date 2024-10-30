@@ -14,6 +14,7 @@ public class PublicEventsPage extends JFrame {
     private List<Event> events;
     private JButton submitButton;
     private JButton queriesButton;
+    private JButton pastEventsButton;
 
     public PublicEventsPage(List<Event> events) {
         this.events = events;
@@ -48,9 +49,14 @@ public class PublicEventsPage extends JFrame {
         queriesButton.setPreferredSize(new Dimension(120, 30));
         queriesButton.addActionListener(e -> new PublicQuery().setVisible(true)); // Opens the Queries page
 
+        pastEventsButton = new JButton("Past Events");
+        pastEventsButton.setPreferredSize(new Dimension(120, 30));
+        pastEventsButton.addActionListener(e -> new PublicPastEvents().setVisible(true)); // Opens the Past Events page
+
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         buttonPanel.add(submitButton);
         buttonPanel.add(queriesButton);
+        buttonPanel.add(pastEventsButton);
 
         add(scrollPane, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
