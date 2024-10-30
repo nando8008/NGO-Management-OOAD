@@ -39,7 +39,7 @@ public class WelcomePage extends JFrame {
         searchButton.setBounds(340, 50, 100, 25);
         searchButton.addActionListener(e -> performSearch());
         publicViewButton.setBounds(450, 50, 120, 25);
-        publicViewButton.addActionListener(e -> new PublicEventsPage(getEventsFromDatabase()).setVisible(true));
+        publicViewButton.addActionListener(e -> new Eventdonate(getEventsFromDatabase()).setVisible(true));
 
         String[] columnNames = {"Name", "Date", "Type", "Action"};
         tableModel = new DefaultTableModel(columnNames, 0);
