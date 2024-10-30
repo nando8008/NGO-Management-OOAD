@@ -153,7 +153,6 @@ public class WelcomePage extends JFrame {
             enrolledEventNames.add(eventName);
             System.out.println("Updated Enrolled Event Names: " + enrolledEventNames);
 
-            // Retrieve event ID from database using event name and then update the user_enrollments table
             String getIdQuery = "SELECT event_id FROM events WHERE event_name = ?";
             Connection conn = DatabaseConnection.connect();
             try (PreparedStatement stmt = conn.prepareStatement(getIdQuery)) {
@@ -162,12 +161,24 @@ public class WelcomePage extends JFrame {
                 if (rs.next()) {
                     int eventId = rs.getInt("event_id");
 
-                    // Now insert into user_enrollments
-                    String updateQuery = "INSERT INTO user_enrollments (user_id, event_id) VALUES (?, ?)";
-                    try (PreparedStatement updateStmt = conn.prepareStatement(updateQuery)) {
-                        updateStmt.setInt(1, userId);
-                        updateStmt.setInt(2, eventId);
-                        updateStmt.executeUpdate();
+                    // Check if the (user_id, event_id) combination already exists
+                    String checkEnrollmentQuery = "SELECT 1 FROM user_enrollments WHERE user_id = ? AND event_id = ?";
+                    try (PreparedStatement checkStmt = conn.prepareStatement(checkEnrollmentQuery)) {
+                        checkStmt.setInt(1, userId);
+                        checkStmt.setInt(2, eventId);
+                        ResultSet checkRs = checkStmt.executeQuery();
+
+                        if (!checkRs.next()) {
+                            // Insert into user_enrollments since it doesn't exist
+                            String updateQuery = "INSERT INTO user_enrollments (user_id, event_id) VALUES (?, ?)";
+                            try (PreparedStatement updateStmt = conn.prepareStatement(updateQuery)) {
+                                updateStmt.setInt(1, userId);
+                                updateStmt.setInt(2, eventId);
+                                updateStmt.executeUpdate();
+                            }
+                        } else {
+                            JOptionPane.showMessageDialog(null, "You are already enrolled in this event.");
+                        }
                     }
                 }
             } catch (SQLException e) {

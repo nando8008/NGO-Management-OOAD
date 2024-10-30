@@ -25,4 +25,3 @@ public class EnrollmentPage extends JFrame {
 
 
 
-

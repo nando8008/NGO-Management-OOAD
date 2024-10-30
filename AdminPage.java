@@ -24,7 +24,7 @@ public class AdminPage extends JFrame {
         manageEventsButton.addActionListener(e -> new ManageEventPage().setVisible(true));
         
         // Open ManageVolunteerPage, passing the volunteers list
-        manageVolunteersButton.addActionListener(e -> new ManageVolunteerPage(volunteers).setVisible(true));
+        manageVolunteersButton.addActionListener(e -> new ManageVolunteerPage().setVisible(true));
 
         add(manageEventsButton);
         add(manageVolunteersButton);

@@ -5,6 +5,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -125,7 +127,7 @@ public class ManageEventPage extends JFrame {
         
         Object[] message = {
             "Name:", nameField,
-            "Date:", dateField,
+            "Date (yyyy-MM-dd):", dateField,
             "Type:", typeField
         };
 
@@ -139,13 +141,28 @@ public class ManageEventPage extends JFrame {
         }
     }
 
+    private java.sql.Date parseDate(String dateStr) {
+        try {
+            java.util.Date utilDate = new SimpleDateFormat("yyyy-MM-dd").parse(dateStr);
+            return new java.sql.Date(utilDate.getTime());
+        } catch (ParseException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Invalid date format. Please use yyyy-MM-dd.");
+            return null;
+        }
+    }
+
     private void saveEventToDatabase(Event event) {
         String insertQuery = "INSERT INTO events (event_name, event_date, event_type) VALUES (?, ?, ?)";
         Connection conn = DatabaseConnection.connect();
 
         try (PreparedStatement stmt = conn.prepareStatement(insertQuery)) {
             stmt.setString(1, event.getName());
-            stmt.setString(2, event.getDate());
+            
+            java.sql.Date sqlDate = parseDate(event.getDate());
+            if (sqlDate == null) return; // Exit if date is invalid
+            
+            stmt.setDate(2, sqlDate);
             stmt.setString(3, event.getType());
             stmt.executeUpdate();
         } catch (SQLException e) {
@@ -162,7 +179,11 @@ public class ManageEventPage extends JFrame {
 
         try (PreparedStatement stmt = conn.prepareStatement(updateQuery)) {
             stmt.setString(1, event.getName());
-            stmt.setString(2, event.getDate());
+            
+            java.sql.Date sqlDate = parseDate(event.getDate());
+            if (sqlDate == null) return; // Exit if date is invalid
+            
+            stmt.setDate(2, sqlDate);
             stmt.setString(3, event.getType());
             stmt.setInt(4, eventId);
             stmt.executeUpdate();
@@ -189,7 +210,3 @@ public class ManageEventPage extends JFrame {
         }
     }
 }
-
-
-
-
