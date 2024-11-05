@@ -14,10 +14,12 @@ public class ManageEventPage extends JFrame {
     private List<Event> events = new ArrayList<>();
     private DefaultTableModel tableModel;
     private JTable eventTable;
+    private JTextField searchField;
+    private JComboBox<String> searchCriteriaComboBox;
 
     public ManageEventPage() {
         setTitle("Manage Events");
-        setSize(600, 400);
+        setSize(600, 450);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout());
 
@@ -28,8 +30,22 @@ public class ManageEventPage extends JFrame {
         String[] columnNames = {"Name", "Date", "Type"};
         tableModel = new DefaultTableModel(columnNames, 0);
         eventTable = new JTable(tableModel);
-        displayEvents();
+        displayEvents(events);
         JScrollPane scrollPane = new JScrollPane(eventTable);
+
+        // Search panel with search field and criteria combo box
+        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        searchField = new JTextField(15);
+        searchCriteriaComboBox = new JComboBox<>(new String[]{"Name", "Date", "Type"});
+        JButton searchButton = new JButton("Search");
+
+        searchButton.addActionListener(e -> searchEvents());
+
+        searchPanel.add(new JLabel("Search:"));
+        searchPanel.add(searchField);
+        searchPanel.add(new JLabel("by"));
+        searchPanel.add(searchCriteriaComboBox);
+        searchPanel.add(searchButton);
 
         // Add, Update, and Delete buttons
         JPanel buttonPanel = new JPanel();
@@ -45,15 +61,13 @@ public class ManageEventPage extends JFrame {
         buttonPanel.add(updateButton);
         buttonPanel.add(deleteButton);
 
+        add(searchPanel, BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
     }
 
     private void fetchEventsFromDatabase() {
-        // Clear any existing events in the list
         events.clear();
-
-        // SQL query to fetch events
         String query = "SELECT event_id, event_name, event_date, event_type FROM events";
         Connection conn = DatabaseConnection.connect();
 
@@ -65,7 +79,7 @@ public class ManageEventPage extends JFrame {
                 String name = rs.getString("event_name");
                 String date = rs.getString("event_date");
                 String type = rs.getString("event_type");
-                
+
                 events.add(new Event(name, date, type, id));
             }
 
@@ -77,11 +91,32 @@ public class ManageEventPage extends JFrame {
         }
     }
 
-    private void displayEvents() {
+    private void displayEvents(List<Event> eventList) {
         tableModel.setRowCount(0); // Clear the table
-        for (Event event : events) {
+        for (Event event : eventList) {
             tableModel.addRow(new Object[]{event.getName(), event.getDate(), event.getType()});
         }
+    }
+
+    private void searchEvents() {
+        String searchTerm = searchField.getText().trim().toLowerCase();
+        String criteria = searchCriteriaComboBox.getSelectedItem().toString();
+
+        List<Event> filteredEvents = new ArrayList<>();
+        for (Event event : events) {
+            boolean matches = switch (criteria) {
+                case "Name" -> event.getName().toLowerCase().contains(searchTerm);
+                case "Date" -> event.getDate().toLowerCase().contains(searchTerm);
+                case "Type" -> event.getType().toLowerCase().contains(searchTerm);
+                default -> false;
+            };
+
+            if (matches) {
+                filteredEvents.add(event);
+            }
+        }
+        
+        displayEvents(filteredEvents);
     }
 
     private void addEvent() {
@@ -89,7 +124,7 @@ public class ManageEventPage extends JFrame {
         if (newEvent != null) {
             saveEventToDatabase(newEvent);
             fetchEventsFromDatabase();
-            displayEvents();
+            displayEvents(events);
         }
     }
 
@@ -101,7 +136,7 @@ public class ManageEventPage extends JFrame {
             if (updatedEvent != null) {
                 updateEventInDatabase(event.getId(), updatedEvent);
                 fetchEventsFromDatabase();
-                displayEvents();
+                displayEvents(events);
             }
         } else {
             JOptionPane.showMessageDialog(this, "Please select an event to update.");
@@ -114,7 +149,7 @@ public class ManageEventPage extends JFrame {
             Event event = events.get(selectedRow);
             deleteEventFromDatabase(event.getId());
             fetchEventsFromDatabase();
-            displayEvents();
+            displayEvents(events);
         } else {
             JOptionPane.showMessageDialog(this, "Please select an event to delete.");
         }
@@ -124,15 +159,15 @@ public class ManageEventPage extends JFrame {
         JTextField nameField = new JTextField(event != null ? event.getName() : "");
         JTextField dateField = new JTextField(event != null ? event.getDate() : "");
         JTextField typeField = new JTextField(event != null ? event.getType() : "");
-        
+
         Object[] message = {
             "Name:", nameField,
             "Date (yyyy-MM-dd):", dateField,
             "Type:", typeField
         };
 
-        int option = JOptionPane.showConfirmDialog(this, message, 
-                        event == null ? "Add Event" : "Update Event", JOptionPane.OK_CANCEL_OPTION);
+        int option = JOptionPane.showConfirmDialog(this, message,
+                event == null ? "Add Event" : "Update Event", JOptionPane.OK_CANCEL_OPTION);
 
         if (option == JOptionPane.OK_OPTION) {
             return new Event(nameField.getText(), dateField.getText(), typeField.getText(), event != null ? event.getId() : 0);
@@ -158,10 +193,10 @@ public class ManageEventPage extends JFrame {
 
         try (PreparedStatement stmt = conn.prepareStatement(insertQuery)) {
             stmt.setString(1, event.getName());
-            
+
             java.sql.Date sqlDate = parseDate(event.getDate());
-            if (sqlDate == null) return; // Exit if date is invalid
-            
+            if (sqlDate == null) return;
+
             stmt.setDate(2, sqlDate);
             stmt.setString(3, event.getType());
             stmt.executeUpdate();
@@ -179,10 +214,10 @@ public class ManageEventPage extends JFrame {
 
         try (PreparedStatement stmt = conn.prepareStatement(updateQuery)) {
             stmt.setString(1, event.getName());
-            
+
             java.sql.Date sqlDate = parseDate(event.getDate());
-            if (sqlDate == null) return; // Exit if date is invalid
-            
+            if (sqlDate == null) return;
+
             stmt.setDate(2, sqlDate);
             stmt.setString(3, event.getType());
             stmt.setInt(4, eventId);
@@ -210,3 +245,4 @@ public class ManageEventPage extends JFrame {
         }
     }
 }
+

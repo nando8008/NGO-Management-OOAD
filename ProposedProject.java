@@ -14,6 +14,10 @@ public class ProposedProject extends JFrame {
     private JButton rejectEventButton;
     private DefaultTableModel tableModel;
 
+    // Search components
+    private JTextField searchField;
+    private JButton searchButton;
+
     public ProposedProject() {
         setTitle("Submitted Projects");
         setSize(600, 400);
@@ -46,7 +50,7 @@ public class ProposedProject extends JFrame {
                 acceptSelectedEvent();
             }
         });
-        
+
         // Reject event button
         rejectEventButton = new JButton("Reject");
         rejectEventButton.setPreferredSize(new Dimension(150, 40));
@@ -60,6 +64,24 @@ public class ProposedProject extends JFrame {
         // Add buttons to the panel
         buttonPanel.add(acceptEventButton);
         buttonPanel.add(rejectEventButton);
+
+        // Create a panel for the search bar
+        JPanel searchPanel = new JPanel(new FlowLayout());
+        searchField = new JTextField(20);
+        searchButton = new JButton("Search");
+        searchButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                filterProjects();
+            }
+        });
+
+        searchPanel.add(new JLabel("Search by Event Name/Type:"));
+        searchPanel.add(searchField);
+        searchPanel.add(searchButton);
+
+        // Add search panel to the top of the frame
+        add(searchPanel, BorderLayout.NORTH);
         
         // Add button panel to the frame
         add(buttonPanel, BorderLayout.SOUTH);
@@ -71,6 +93,35 @@ public class ProposedProject extends JFrame {
             String sql = "SELECT event_s_name, event_s_type FROM event_submission";
             try (PreparedStatement stmt = conn.prepareStatement(sql);
                  ResultSet rs = stmt.executeQuery()) {
+
+                // Loop through the result set and add rows to the table model
+                while (rs.next()) {
+                    String eventName = rs.getString("event_s_name");
+                    String eventType = rs.getString("event_s_type");
+                    tableModel.addRow(new Object[]{eventName, eventType});
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Database error: " + e.getMessage());
+            } finally {
+                DatabaseConnection.disconnect(conn);
+            }
+        }
+    }
+
+    private void filterProjects() {
+        String searchText = searchField.getText().toLowerCase();
+        // Clear existing rows and re-fetch data based on search criteria
+        tableModel.setRowCount(0);
+
+        Connection conn = DatabaseConnection.connect();
+        if (conn != null) {
+            String sql = "SELECT event_s_name, event_s_type FROM event_submission WHERE LOWER(event_s_name) LIKE ? OR LOWER(event_s_type) LIKE ?";
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                String likeSearchText = "%" + searchText + "%";
+                stmt.setString(1, likeSearchText);
+                stmt.setString(2, likeSearchText);
+                ResultSet rs = stmt.executeQuery();
 
                 // Loop through the result set and add rows to the table model
                 while (rs.next()) {
@@ -179,3 +230,4 @@ public class ProposedProject extends JFrame {
         }
     }
 }
+

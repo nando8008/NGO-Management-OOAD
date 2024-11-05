@@ -13,6 +13,8 @@ public class SponsorPage extends JFrame {
     private JButton addSponsorButton;
     private JButton deleteSponsorButton;
     private JButton updateSponsorButton;
+    private JTextField searchField;
+    private JComboBox<String> searchCriteriaBox;
 
     public SponsorPage() {
         setTitle("Sponsors");
@@ -20,18 +22,34 @@ public class SponsorPage extends JFrame {
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout());
 
+        // Search bar panel
+        JPanel searchPanel = new JPanel();
+        searchPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+        searchField = new JTextField(15);
+        searchCriteriaBox = new JComboBox<>(new String[]{"Name", "Email"});
+        JButton searchButton = new JButton("Search");
+
+        searchButton.addActionListener(e -> filterSponsorData());
+
+        searchPanel.add(new JLabel("Search:"));
+        searchPanel.add(searchField);
+        searchPanel.add(searchCriteriaBox);
+        searchPanel.add(searchButton);
+
+        add(searchPanel, BorderLayout.NORTH);
+
         // Create table model and table for sponsors
         String[] columnNames = {"Name", "Email"};
         tableModel = new DefaultTableModel(columnNames, 0);
         sponsorsTable = new JTable(tableModel);
-        sponsorsTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION); // Allow multiple rows to be selected
+        sponsorsTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
         loadSponsorData();
 
         JScrollPane scrollPane = new JScrollPane(sponsorsTable);
         add(scrollPane, BorderLayout.CENTER);
 
-        // Send info to sponsors button
+        // Initialize buttons
         sendInfoToSponsorsButton = new JButton("Send info");
         sendInfoToSponsorsButton.setPreferredSize(new Dimension(180, 40));
         sendInfoToSponsorsButton.addActionListener(e -> {
@@ -43,24 +61,20 @@ public class SponsorPage extends JFrame {
             }
         });
 
-        // Add sponsor button
         addSponsorButton = new JButton("Add Sponsor");
         addSponsorButton.setPreferredSize(new Dimension(180, 40));
         addSponsorButton.addActionListener(e -> handleAddSponsor());
 
-        // Delete sponsor button
         deleteSponsorButton = new JButton("Delete Sponsor");
         deleteSponsorButton.setPreferredSize(new Dimension(180, 40));
         deleteSponsorButton.addActionListener(e -> handleDeleteSponsor());
 
-        // Update sponsor button
         updateSponsorButton = new JButton("Update Sponsor");
         updateSponsorButton.setPreferredSize(new Dimension(180, 40));
         updateSponsorButton.addActionListener(e -> handleUpdateSponsor());
 
-        // Panel for buttons
         JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new GridLayout(1, 4, 10, 10)); // Adjust layout to ensure buttons are visible
+        buttonPanel.setLayout(new GridLayout(1, 4, 10, 10));
         buttonPanel.add(sendInfoToSponsorsButton);
         buttonPanel.add(addSponsorButton);
         buttonPanel.add(deleteSponsorButton);
@@ -81,6 +95,33 @@ public class SponsorPage extends JFrame {
             } catch (SQLException ex) {
                 ex.printStackTrace();
                 JOptionPane.showMessageDialog(this, "Error loading data: " + ex.getMessage());
+            } finally {
+                DatabaseConnection.disconnect(conn);
+            }
+        }
+    }
+
+    private void filterSponsorData() {
+        String searchQuery = searchField.getText().trim();
+        String criteria = searchCriteriaBox.getSelectedItem().toString().toLowerCase();
+
+        // Clear the table before loading filtered data
+        tableModel.setRowCount(0);
+
+        Connection conn = DatabaseConnection.connect();
+        if (conn != null) {
+            String sql = "SELECT name, emailid FROM sponsors WHERE LOWER(" + criteria + ") LIKE ?";
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, "%" + searchQuery.toLowerCase() + "%");
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    String name = rs.getString("name");
+                    String email = rs.getString("emailid");
+                    tableModel.addRow(new Object[]{name, email});
+                }
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error filtering data: " + ex.getMessage());
             } finally {
                 DatabaseConnection.disconnect(conn);
             }

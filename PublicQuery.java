@@ -11,11 +11,13 @@ import java.sql.SQLException;
 public class PublicQuery extends JFrame {
     private JTable queryTable;
     private JButton askQueryButton;
+    private JTextField searchField;
 
     public PublicQuery() {
         setTitle("Public Queries");
-        setSize(500, 300);
+        setSize(500, 350);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setLayout(new BorderLayout());
 
         // Define table model and column names
         String[] columnNames = {"Question", "Answer"};
@@ -25,23 +27,33 @@ public class PublicQuery extends JFrame {
         // Load only questions with non-empty answers from the database
         loadAnsweredQueriesFromDatabase(tableModel);
 
-        // Add scroll pane for the table
+        // Scroll pane for the table
         JScrollPane scrollPane = new JScrollPane(queryTable);
 
-        // Initialize and add "Ask a Query" button
+        // Initialize "Ask a Query" button
         askQueryButton = new JButton("Ask a Query");
         askQueryButton.setPreferredSize(new Dimension(120, 30));
-        askQueryButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                openAskQueryDialog();
-            }
-        });
+        askQueryButton.addActionListener(e -> openAskQueryDialog());
 
-        // Panel to hold the button at the bottom
+        // Search bar components
+        searchField = new JTextField(20);
+        JButton searchButton = new JButton("Search");
+
+        // Add action listener for the search button
+        searchButton.addActionListener(e -> filterQueries(tableModel));
+
+        // Panel to hold the search bar
+        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        searchPanel.add(new JLabel("Search:"));
+        searchPanel.add(searchField);
+        searchPanel.add(searchButton);
+
+        // Panel to hold the "Ask a Query" button at the bottom
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         buttonPanel.add(askQueryButton);
 
+        // Add components to frame
+        add(searchPanel, BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
     }
@@ -103,4 +115,35 @@ public class PublicQuery extends JFrame {
             }
         }
     }
+
+    // Method to filter queries based on search text
+    private void filterQueries(DefaultTableModel tableModel) {
+        String searchText = searchField.getText().trim().toLowerCase();
+
+        // Clear the current rows in the table
+        tableModel.setRowCount(0);
+
+        Connection conn = DatabaseConnection.connect();
+        if (conn != null) {
+            String sql = "SELECT question, answer FROM public_query WHERE answer IS NOT NULL AND answer <> ''";
+
+            try (PreparedStatement stmt = conn.prepareStatement(sql); ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    String question = rs.getString("question").toLowerCase();
+                    String answer = rs.getString("answer");
+
+                    // Add rows that match the search criteria
+                    if (question.contains(searchText)) {
+                        tableModel.addRow(new Object[]{rs.getString("question"), answer});
+                    }
+                }
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Database error: " + ex.getMessage());
+            } finally {
+                DatabaseConnection.disconnect(conn);
+            }
+        }
+    }
 }
+

@@ -9,6 +9,8 @@ public class ManageVolunteerPage extends JFrame {
     private List<Volunteer> volunteers = new ArrayList<>();
     private DefaultTableModel tableModel;
     private JTable volunteerTable;
+    private JTextField searchField;
+    private JComboBox<String> searchCriteriaComboBox;
 
     public ManageVolunteerPage() {
         setTitle("Manage Volunteers");
@@ -23,8 +25,22 @@ public class ManageVolunteerPage extends JFrame {
         String[] columnNames = {"Username", "Password", "Gender", "Date of Birth"};
         tableModel = new DefaultTableModel(columnNames, 0);
         volunteerTable = new JTable(tableModel);
-        displayVolunteers();
+        displayVolunteers(volunteers);
         JScrollPane scrollPane = new JScrollPane(volunteerTable);
+
+        // Search panel with search field and criteria combo box
+        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        searchField = new JTextField(15);
+        searchCriteriaComboBox = new JComboBox<>(new String[]{"Username", "Gender", "Date of Birth"});
+        JButton searchButton = new JButton("Search");
+
+        searchButton.addActionListener(e -> searchVolunteers());
+
+        searchPanel.add(new JLabel("Search:"));
+        searchPanel.add(searchField);
+        searchPanel.add(new JLabel("by"));
+        searchPanel.add(searchCriteriaComboBox);
+        searchPanel.add(searchButton);
 
         // Add, Update, and Delete buttons
         JPanel buttonPanel = new JPanel();
@@ -40,6 +56,7 @@ public class ManageVolunteerPage extends JFrame {
         buttonPanel.add(updateButton);
         buttonPanel.add(deleteButton);
 
+        add(searchPanel, BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
     }
@@ -66,9 +83,9 @@ public class ManageVolunteerPage extends JFrame {
         }
     }
 
-    private void displayVolunteers() {
+    private void displayVolunteers(List<Volunteer> volunteerList) {
         tableModel.setRowCount(0); // Clear the table
-        for (Volunteer volunteer : volunteers) {
+        for (Volunteer volunteer : volunteerList) {
             tableModel.addRow(new Object[]{
                 volunteer.getUsername(),
                 volunteer.getPassword(),
@@ -78,12 +95,33 @@ public class ManageVolunteerPage extends JFrame {
         }
     }
 
+    private void searchVolunteers() {
+        String searchTerm = searchField.getText().trim().toLowerCase();
+        String criteria = searchCriteriaComboBox.getSelectedItem().toString();
+
+        List<Volunteer> filteredVolunteers = new ArrayList<>();
+        for (Volunteer volunteer : volunteers) {
+            boolean matches = switch (criteria) {
+                case "Username" -> volunteer.getUsername().toLowerCase().contains(searchTerm);
+                case "Gender" -> volunteer.getGender().toLowerCase().contains(searchTerm);
+                case "Date of Birth" -> volunteer.getDateOfBirth().toString().contains(searchTerm);
+                default -> false;
+            };
+
+            if (matches) {
+                filteredVolunteers.add(volunteer);
+            }
+        }
+        
+        displayVolunteers(filteredVolunteers);
+    }
+
     private void addVolunteer() {
         Volunteer volunteer = getVolunteerDetails(null);
         if (volunteer != null) {
             if (saveVolunteerToDatabase(volunteer)) {
                 fetchVolunteersFromDatabase();
-                displayVolunteers();
+                displayVolunteers(volunteers);
             }
         }
     }
@@ -140,7 +178,7 @@ public class ManageVolunteerPage extends JFrame {
             if (updatedVolunteer != null) {
                 if (updateVolunteerInDatabase(volunteer.getUsername(), updatedVolunteer)) {
                     fetchVolunteersFromDatabase();
-                    displayVolunteers();
+                    displayVolunteers(volunteers);
                 }
             }
         } else {
@@ -175,7 +213,7 @@ public class ManageVolunteerPage extends JFrame {
             String username = volunteers.get(selectedRow).getUsername();
             if (deleteVolunteerFromDatabase(username)) {
                 fetchVolunteersFromDatabase();
-                displayVolunteers();
+                displayVolunteers(volunteers);
             }
         } else {
             JOptionPane.showMessageDialog(this, "Please select a volunteer to delete.");

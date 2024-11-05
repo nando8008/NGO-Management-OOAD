@@ -7,8 +7,8 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ManagePastEvents extends JFrame {
     private JTable eventsTable;
@@ -16,12 +16,17 @@ public class ManagePastEvents extends JFrame {
     private JButton addButton;
     private JButton deleteButton;
     private JButton updateButton;
+    private JTextField searchField;
+    private JComboBox<String> searchCriteriaComboBox;
+    private List<Event> events;
 
     public ManagePastEvents() {
         setTitle("Manage Past Events");
         setSize(600, 400);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout());
+
+        events = new ArrayList<>();
 
         // Create table model and table for events
         String[] columnNames = {"Event Name", "Event Date", "Event Status"};
@@ -33,7 +38,22 @@ public class ManagePastEvents extends JFrame {
         JScrollPane scrollPane = new JScrollPane(eventsTable);
         add(scrollPane, BorderLayout.CENTER);
 
-        // Add, Delete, and Update buttons
+        // Search panel with search field and criteria combo box
+        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        searchField = new JTextField(15);
+        searchCriteriaComboBox = new JComboBox<>(new String[]{"Event Name", "Event Date", "Event Status"});
+        JButton searchButton = new JButton("Search");
+
+        searchButton.addActionListener(e -> searchEvents());
+
+        searchPanel.add(new JLabel("Search:"));
+        searchPanel.add(searchField);
+        searchPanel.add(new JLabel("by"));
+        searchPanel.add(searchCriteriaComboBox);
+        searchPanel.add(searchButton);
+
+        // Panel for buttons
+        JPanel buttonPanel = new JPanel();
         addButton = new JButton("Add");
         deleteButton = new JButton("Delete");
         updateButton = new JButton("Update");
@@ -42,15 +62,17 @@ public class ManagePastEvents extends JFrame {
         deleteButton.addActionListener(this::handleDeleteEvent);
         updateButton.addActionListener(this::handleUpdateEvent);
 
-        // Panel for buttons
-        JPanel buttonPanel = new JPanel();
         buttonPanel.add(addButton);
         buttonPanel.add(deleteButton);
         buttonPanel.add(updateButton);
+
+        // Add panels to frame
+        add(searchPanel, BorderLayout.NORTH);
         add(buttonPanel, BorderLayout.SOUTH);
     }
 
     private void loadEventStatusData() {
+        events.clear();  // Clear the list to avoid duplicates when reloading
         Connection conn = DatabaseConnection.connect();
         if (conn != null) {
             String sql = "SELECT event_name, event_occured_date, event_x_status FROM event_status";
@@ -59,6 +81,7 @@ public class ManagePastEvents extends JFrame {
                     String eventName = rs.getString("event_name");
                     Date eventDate = rs.getDate("event_occured_date");
                     String eventStatus = rs.getString("event_x_status");
+                    events.add(new Event(eventName, eventDate, eventStatus));
                     tableModel.addRow(new Object[]{eventName, eventDate.toString(), eventStatus});
                 }
             } catch (SQLException ex) {
@@ -70,6 +93,34 @@ public class ManagePastEvents extends JFrame {
         }
     }
 
+    private void displayEvents(List<Event> eventList) {
+        tableModel.setRowCount(0); // Clear the table
+        for (Event event : eventList) {
+            tableModel.addRow(new Object[]{event.getName(), event.getDate().toString(), event.getStatus()});
+        }
+    }
+
+    private void searchEvents() {
+        String searchTerm = searchField.getText().trim().toLowerCase();
+        String criteria = (String) searchCriteriaComboBox.getSelectedItem();
+
+        List<Event> filteredEvents = new ArrayList<>();
+        for (Event event : events) {
+            boolean matches = switch (criteria) {
+                case "Event Name" -> event.getName().toLowerCase().contains(searchTerm);
+                case "Event Date" -> event.getDate().toString().contains(searchTerm);
+                case "Event Status" -> event.getStatus().toLowerCase().contains(searchTerm);
+                default -> false;
+            };
+
+            if (matches) {
+                filteredEvents.add(event);
+            }
+        }
+        displayEvents(filteredEvents);
+    }
+
+    // Existing methods (handleAddEvent, handleDeleteEvent, handleUpdateEvent) remain the same.
     private void handleAddEvent(ActionEvent e) {
         JTextField eventNameField = new JTextField();
         JTextField eventDateField = new JTextField();
@@ -83,7 +134,7 @@ public class ManagePastEvents extends JFrame {
             String eventStatus = eventStatusField.getText().trim();
 
             try {
-                Date eventDate = Date.valueOf(eventDateStr); // Convert String to java.sql.Date
+                Date eventDate = Date.valueOf(eventDateStr);
 
                 Connection conn = DatabaseConnection.connect();
                 if (conn != null) {
@@ -93,6 +144,7 @@ public class ManagePastEvents extends JFrame {
                         stmt.setDate(2, eventDate);
                         stmt.setString(3, eventStatus);
                         stmt.executeUpdate();
+                        events.add(new Event(eventName, eventDate, eventStatus));
                         tableModel.addRow(new Object[]{eventName, eventDate.toString(), eventStatus});
                         JOptionPane.showMessageDialog(this, "Event added successfully.");
                     } catch (SQLException ex) {
@@ -119,6 +171,7 @@ public class ManagePastEvents extends JFrame {
                 try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                     stmt.setString(1, eventName);
                     stmt.executeUpdate();
+                    events.removeIf(event -> event.getName().equals(eventName));
                     tableModel.removeRow(selectedRow);
                     JOptionPane.showMessageDialog(this, "Event deleted successfully.");
                 } catch (SQLException ex) {
@@ -149,7 +202,7 @@ public class ManagePastEvents extends JFrame {
                 String newEventStatus = eventStatusField.getText().trim();
 
                 try {
-                    Date newEventDate = Date.valueOf(newEventDateStr); // Convert String to java.sql.Date
+                    Date newEventDate = Date.valueOf(newEventDateStr);
 
                     Connection conn = DatabaseConnection.connect();
                     if (conn != null) {
@@ -160,6 +213,13 @@ public class ManagePastEvents extends JFrame {
                             stmt.setString(3, newEventStatus);
                             stmt.setString(4, oldEventName);
                             stmt.executeUpdate();
+
+                            Event updatedEvent = events.stream().filter(event -> event.getName().equals(oldEventName)).findFirst().orElse(null);
+                            if (updatedEvent != null) {
+                                updatedEvent.setName(newEventName);
+                                updatedEvent.setDate(newEventDate);
+                                updatedEvent.setStatus(newEventStatus);
+                            }
 
                             tableModel.setValueAt(newEventName, selectedRow, 0);
                             tableModel.setValueAt(newEventDate.toString(), selectedRow, 1);
@@ -181,4 +241,42 @@ public class ManagePastEvents extends JFrame {
             JOptionPane.showMessageDialog(this, "Please select an event to update.");
         }
     }
+
+    // Event class to store event information in memory
+    private static class Event {
+        private String name;
+        private Date date;
+        private String status;
+
+        public Event(String name, Date date, String status) {
+            this.name = name;
+            this.date = date;
+            this.status = status;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public Date getDate() {
+            return date;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public void setDate(Date date) {
+            this.date = date;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+    }
 }
+

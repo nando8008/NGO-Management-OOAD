@@ -8,10 +8,14 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class PublicEventsPage extends JFrame {
     private JTable eventTable;
     private List<Event> events;
+    private DefaultTableModel tableModel;
+    private JTextField searchField;
+    private JComboBox<String> searchOptions;
     private JButton submitButton;
     private JButton queriesButton;
     private JButton pastEventsButton;
@@ -19,47 +23,95 @@ public class PublicEventsPage extends JFrame {
     public PublicEventsPage(List<Event> events) {
         this.events = events;
         setTitle("Upcoming Events");
-        setSize(600, 400);
+        setSize(600, 450);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         String[] columnNames = {"Event Name", "Event Date", "Event Type", "Action"};
-        DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0);
+        tableModel = new DefaultTableModel(columnNames, 0);
         eventTable = new JTable(tableModel) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 3; // Only allow the action button to be editable
+                return column == 3;
             }
         };
 
-        for (Event event : events) {
-            Object[] rowData = {event.getName(), event.getDate(), event.getType(), "Donate"};
-            tableModel.addRow(rowData);
-        }
+        // Populate the table with initial data
+        populateTable(events);
 
         JScrollPane scrollPane = new JScrollPane(eventTable);
         eventTable.setFillsViewportHeight(true);
         eventTable.getColumnModel().getColumn(3).setCellRenderer(new ButtonRenderer());
         eventTable.getColumnModel().getColumn(3).setCellEditor(new ButtonEditor(new JCheckBox(), events));
 
+        // Search components
+        searchField = new JTextField(15);
+        searchOptions = new JComboBox<>(new String[]{"Event Name", "Event Date", "Event Type"});
+        JButton searchButton = new JButton("Search");
+
+        // Add action listener for the search button
+        searchButton.addActionListener(e -> filterTable());
+
+        // Panel for search bar
+        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        searchPanel.add(new JLabel("Search:"));
+        searchPanel.add(searchField);
+        searchPanel.add(searchOptions);
+        searchPanel.add(searchButton);
+
+        // Bottom buttons
         submitButton = new JButton("Submit Project");
         submitButton.setPreferredSize(new Dimension(120, 30));
         submitButton.addActionListener(e -> openSubmissionDialog());
 
         queriesButton = new JButton("Queries");
         queriesButton.setPreferredSize(new Dimension(120, 30));
-        queriesButton.addActionListener(e -> new PublicQuery().setVisible(true)); // Opens the Queries page
+        queriesButton.addActionListener(e -> new PublicQuery().setVisible(true));
 
         pastEventsButton = new JButton("Past Events");
         pastEventsButton.setPreferredSize(new Dimension(120, 30));
-        pastEventsButton.addActionListener(e -> new PublicPastEvents().setVisible(true)); // Opens the Past Events page
+        pastEventsButton.addActionListener(e -> new PublicPastEvents().setVisible(true));
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         buttonPanel.add(submitButton);
         buttonPanel.add(queriesButton);
         buttonPanel.add(pastEventsButton);
 
+        // Add components to frame
+        add(searchPanel, BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
+    }
+
+    // Populate table with event data
+    private void populateTable(List<Event> eventList) {
+        tableModel.setRowCount(0);
+        for (Event event : eventList) {
+            Object[] rowData = {event.getName(), event.getDate(), event.getType(), "Donate"};
+            tableModel.addRow(rowData);
+        }
+    }
+
+    // Filter the table based on search criteria
+    private void filterTable() {
+        String searchText = searchField.getText().trim().toLowerCase();
+        String searchOption = (String) searchOptions.getSelectedItem();
+
+        List<Event> filteredEvents = events.stream()
+                .filter(event -> {
+                    switch (searchOption) {
+                        case "Event Name":
+                            return event.getName().toLowerCase().contains(searchText);
+                        case "Event Date":
+                            return event.getDate().toLowerCase().contains(searchText);
+                        case "Event Type":
+                            return event.getType().toLowerCase().contains(searchText);
+                        default:
+                            return false;
+                    }
+                })
+                .collect(Collectors.toList());
+
+        populateTable(filteredEvents); // Update table with filtered events
     }
 
     private void openSubmissionDialog() {
