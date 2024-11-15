@@ -2,11 +2,12 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ManageVolunteerPage extends JFrame {
-    private List<Volunteer> volunteers = new ArrayList<>();
+    private List<String[]> volunteers = new ArrayList<>(); // List to store volunteer details
     private DefaultTableModel tableModel;
     private JTable volunteerTable;
     private JTextField searchField;
@@ -73,7 +74,9 @@ public class ManageVolunteerPage extends JFrame {
                 String password = rs.getString("password");
                 String gender = rs.getString("gender");
                 Date dateOfBirth = rs.getDate("date_of_birth");
-                volunteers.add(new Volunteer(username, password, gender, dateOfBirth));
+
+                // Store the details as an array
+                volunteers.add(new String[]{username, password, gender, dateOfBirth.toString()});
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -83,15 +86,10 @@ public class ManageVolunteerPage extends JFrame {
         }
     }
 
-    private void displayVolunteers(List<Volunteer> volunteerList) {
+    private void displayVolunteers(List<String[]> volunteerList) {
         tableModel.setRowCount(0); // Clear the table
-        for (Volunteer volunteer : volunteerList) {
-            tableModel.addRow(new Object[]{
-                volunteer.getUsername(),
-                volunteer.getPassword(),
-                volunteer.getGender(),
-                volunteer.getDateOfBirth()
-            });
+        for (String[] volunteer : volunteerList) {
+            tableModel.addRow(volunteer); // Add each volunteer's details as a row
         }
     }
 
@@ -99,12 +97,12 @@ public class ManageVolunteerPage extends JFrame {
         String searchTerm = searchField.getText().trim().toLowerCase();
         String criteria = searchCriteriaComboBox.getSelectedItem().toString();
 
-        List<Volunteer> filteredVolunteers = new ArrayList<>();
-        for (Volunteer volunteer : volunteers) {
+        List<String[]> filteredVolunteers = new ArrayList<>();
+        for (String[] volunteer : volunteers) {
             boolean matches = switch (criteria) {
-                case "Username" -> volunteer.getUsername().toLowerCase().contains(searchTerm);
-                case "Gender" -> volunteer.getGender().toLowerCase().contains(searchTerm);
-                case "Date of Birth" -> volunteer.getDateOfBirth().toString().contains(searchTerm);
+                case "Username" -> volunteer[0].toLowerCase().contains(searchTerm);
+                case "Gender" -> volunteer[2].toLowerCase().contains(searchTerm);
+                case "Date of Birth" -> volunteer[3].contains(searchTerm);
                 default -> false;
             };
 
@@ -112,53 +110,82 @@ public class ManageVolunteerPage extends JFrame {
                 filteredVolunteers.add(volunteer);
             }
         }
-        
+
         displayVolunteers(filteredVolunteers);
     }
 
     private void addVolunteer() {
-        Volunteer volunteer = getVolunteerDetails(null);
-        if (volunteer != null) {
-            if (saveVolunteerToDatabase(volunteer)) {
+        String[] volunteerDetails = getVolunteerDetails(null);
+        if (volunteerDetails != null) {
+            if (saveVolunteerToDatabase(volunteerDetails)) {
                 fetchVolunteersFromDatabase();
                 displayVolunteers(volunteers);
             }
         }
     }
 
-    private Volunteer getVolunteerDetails(Volunteer volunteer) {
-        JTextField usernameField = new JTextField(volunteer != null ? volunteer.getUsername() : "");
-        JTextField passwordField = new JTextField(volunteer != null ? volunteer.getPassword() : "");
-        JTextField genderField = new JTextField(volunteer != null ? volunteer.getGender() : "");
-        JTextField dobField = new JTextField(volunteer != null ? volunteer.getDateOfBirth().toString() : "");
+    private String[] getVolunteerDetails(String[] existingDetails) {
+        JTextField usernameField = new JTextField(existingDetails != null ? existingDetails[0] : "");
+        JTextField passwordField = new JTextField(existingDetails != null ? existingDetails[1] : "");
 
+        // Gender JComboBox with Male, Female, and Other options
+        JComboBox<String> genderComboBox = new JComboBox<>(new String[]{"Male", "Female", "Other"});
+
+        // Set initial selection for gender if existing details are provided
+        if (existingDetails != null) {
+            genderComboBox.setSelectedItem(existingDetails[2]);
+        }
+
+        // Day, Month, and Year JComboBoxes for date of birth
+        JComboBox<String> dayComboBox = new JComboBox<>(generateDays());
+        JComboBox<String> monthComboBox = new JComboBox<>(generateMonths());
+        JComboBox<String> yearComboBox = new JComboBox<>(generateYears());
+
+        // Set initial selections based on volunteer data if available
+        if (existingDetails != null) {
+            LocalDate dob = LocalDate.parse(existingDetails[3]);
+            dayComboBox.setSelectedItem(String.format("%02d", dob.getDayOfMonth()));
+            monthComboBox.setSelectedItem(dob.getMonth().name().substring(0, 3));
+            yearComboBox.setSelectedItem(String.valueOf(dob.getYear()));
+        }
+
+        // Displaying the form to collect volunteer details
         Object[] message = {
             "Username:", usernameField,
             "Password:", passwordField,
-            "Gender:", genderField,
-            "Date of Birth (YYYY-MM-DD):", dobField
+            "Gender:", genderComboBox,
+            "Date of Birth (Day, Month, Year):", dayComboBox, monthComboBox, yearComboBox
         };
 
-        int option = JOptionPane.showConfirmDialog(this, message, 
-                        volunteer == null ? "Add Volunteer" : "Update Volunteer", JOptionPane.OK_CANCEL_OPTION);
+        int option = JOptionPane.showConfirmDialog(this, message,
+                existingDetails == null ? "Add Volunteer" : "Update Volunteer", JOptionPane.OK_CANCEL_OPTION);
 
         if (option == JOptionPane.OK_OPTION) {
-            return new Volunteer(usernameField.getText(), passwordField.getText(), genderField.getText(),
-                                 Date.valueOf(dobField.getText()));
+            // Convert selected day, month, and year into a Date object
+            int day = Integer.parseInt((String) dayComboBox.getSelectedItem());
+            int month = monthToNumber((String) monthComboBox.getSelectedItem());
+            int year = Integer.parseInt((String) yearComboBox.getSelectedItem());
+
+            return new String[]{
+                usernameField.getText(),
+                passwordField.getText(),
+                (String) genderComboBox.getSelectedItem(),
+                LocalDate.of(year, month, day).toString()
+            };
         } else {
             return null;
         }
     }
 
-    private boolean saveVolunteerToDatabase(Volunteer volunteer) {
+    private boolean saveVolunteerToDatabase(String[] volunteerDetails) {
         String insertQuery = "INSERT INTO user_login_credentials (username, password, gender, date_of_birth) VALUES (?, ?, ?, ?)";
         Connection conn = DatabaseConnection.connect();
 
         try (PreparedStatement stmt = conn.prepareStatement(insertQuery)) {
-            stmt.setString(1, volunteer.getUsername());
-            stmt.setString(2, volunteer.getPassword());
-            stmt.setString(3, volunteer.getGender());
-            stmt.setDate(4, volunteer.getDateOfBirth());
+            stmt.setString(1, volunteerDetails[0]);
+            stmt.setString(2, volunteerDetails[1]);
+            stmt.setString(3, volunteerDetails[2]);
+            stmt.setDate(4, Date.valueOf(volunteerDetails[3])); // Convert string to Date
             stmt.executeUpdate();
             return true;
         } catch (SQLException e) {
@@ -173,10 +200,10 @@ public class ManageVolunteerPage extends JFrame {
     private void updateVolunteer() {
         int selectedRow = volunteerTable.getSelectedRow();
         if (selectedRow >= 0) {
-            Volunteer volunteer = volunteers.get(selectedRow);
-            Volunteer updatedVolunteer = getVolunteerDetails(volunteer);
-            if (updatedVolunteer != null) {
-                if (updateVolunteerInDatabase(volunteer.getUsername(), updatedVolunteer)) {
+            String[] volunteerDetails = volunteers.get(selectedRow);
+            String[] updatedDetails = getVolunteerDetails(volunteerDetails);
+            if (updatedDetails != null) {
+                if (updateVolunteerInDatabase(volunteerDetails[0], updatedDetails)) {
                     fetchVolunteersFromDatabase();
                     displayVolunteers(volunteers);
                 }
@@ -186,15 +213,15 @@ public class ManageVolunteerPage extends JFrame {
         }
     }
 
-    private boolean updateVolunteerInDatabase(String oldUsername, Volunteer newVolunteer) {
+    private boolean updateVolunteerInDatabase(String oldUsername, String[] newVolunteerDetails) {
         String updateQuery = "UPDATE user_login_credentials SET username = ?, password = ?, gender = ?, date_of_birth = ? WHERE username = ?";
         Connection conn = DatabaseConnection.connect();
 
         try (PreparedStatement stmt = conn.prepareStatement(updateQuery)) {
-            stmt.setString(1, newVolunteer.getUsername());
-            stmt.setString(2, newVolunteer.getPassword());
-            stmt.setString(3, newVolunteer.getGender());
-            stmt.setDate(4, newVolunteer.getDateOfBirth());
+            stmt.setString(1, newVolunteerDetails[0]);
+            stmt.setString(2, newVolunteerDetails[1]);
+            stmt.setString(3, newVolunteerDetails[2]);
+            stmt.setDate(4, Date.valueOf(newVolunteerDetails[3]));
             stmt.setString(5, oldUsername);
             stmt.executeUpdate();
             return true;
@@ -210,7 +237,7 @@ public class ManageVolunteerPage extends JFrame {
     private void deleteVolunteer() {
         int selectedRow = volunteerTable.getSelectedRow();
         if (selectedRow >= 0) {
-            String username = volunteers.get(selectedRow).getUsername();
+            String username = volunteers.get(selectedRow)[0];
             if (deleteVolunteerFromDatabase(username)) {
                 fetchVolunteersFromDatabase();
                 displayVolunteers(volunteers);
@@ -237,34 +264,51 @@ public class ManageVolunteerPage extends JFrame {
         }
     }
 
-    // Volunteer class to hold volunteer details
-    private static class Volunteer {
-        private String username;
-        private String password;
-        private String gender;
-        private Date dateOfBirth;
-
-        public Volunteer(String username, String password, String gender, Date dateOfBirth) {
-            this.username = username;
-            this.password = password;
-            this.gender = gender;
-            this.dateOfBirth = dateOfBirth;
+    // Helper methods to generate day, month, and year values
+    private String[] generateDays() {
+        String[] days = new String[31];
+        for (int i = 0; i < 31; i++) {
+            days[i] = String.format("%02d", i + 1);
         }
+        return days;
+    }
 
-        public String getUsername() {
-            return username;
-        }
+    private String[] generateMonths() {
+        return new String[]{"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+    }
 
-        public String getPassword() {
-            return password;
+    private String[] generateYears() {
+        int currentYear = LocalDate.now().getYear();
+        String[] years = new String[100]; // Example: range of 100 years
+        for (int i = 0; i < 100; i++) {
+            years[i] = String.valueOf(currentYear - i);
         }
+        return years;
+    }
 
-        public String getGender() {
-            return gender;
+    // Convert month abbreviation to numeric value (Jan -> 1, Feb -> 2, etc.)
+    private int monthToNumber(String month) {
+        switch (month) {
+            case "Jan": return 1;
+            case "Feb": return 2;
+            case "Mar": return 3;
+            case "Apr": return 4;
+            case "May": return 5;
+            case "Jun": return 6;
+            case "Jul": return 7;
+            case "Aug": return 8;
+            case "Sep": return 9;
+            case "Oct": return 10;
+            case "Nov": return 11;
+            case "Dec": return 12;
+            default: throw new IllegalArgumentException("Invalid month: " + month);
         }
+    }
 
-        public Date getDateOfBirth() {
-            return dateOfBirth;
-        }
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            ManageVolunteerPage page = new ManageVolunteerPage();
+            page.setVisible(true);
+        });
     }
 }

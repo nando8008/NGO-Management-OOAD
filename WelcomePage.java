@@ -8,6 +8,8 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.swing.table.TableCellRenderer;
+
 
 public class WelcomePage extends JFrame {
     private JLabel welcomeLabel = new JLabel("Welcome to the NGO Management System!");
@@ -216,5 +218,89 @@ public class WelcomePage extends JFrame {
                 })
                 .collect(Collectors.toList());
         displayEvents(filteredEvents);
+    }
+
+    // Inner class for ButtonEditor
+    private class ButtonEditor extends DefaultCellEditor {
+        private JButton button;
+        private String label;
+        private boolean isPushed;
+        private WelcomePage welcomePage;
+        private int eventId;
+        private String eventName;
+
+        public ButtonEditor(JCheckBox checkBox, WelcomePage welcomePage) {
+            super(checkBox);
+            this.welcomePage = welcomePage;
+            button = new JButton();
+            button.setOpaque(true);
+            button.addActionListener(e -> {
+                fireEditingStopped(); // Stop editing when button is pressed
+                // Handle the button click action
+                if (eventId != -1 && welcomePage.isEnrolled(eventId)) {
+                    JOptionPane.showMessageDialog(button, "You are already enrolled.");
+                } else if (eventName != null && welcomePage.isEnrolled(eventName)) {
+                    JOptionPane.showMessageDialog(button, "You are already enrolled.");
+                } else {
+                    // Add enrollment logic
+                    if (eventId != -1) {
+                        welcomePage.updateEnrollmentStatus(eventId);
+                    } else if (eventName != null) {
+                        welcomePage.updateEnrollmentStatus(eventName);
+                    }
+                }
+            });
+        }
+
+        @Override
+        public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+            label = (value == null) ? "Enroll" : value.toString();
+            button.setText(label);
+
+            // Reset variables
+            eventId = -1;
+            eventName = null;
+
+            // Get the event ID or name for the current row
+            Object cellValue = table.getValueAt(row, 0);
+            if (cellValue instanceof Integer) {
+                eventId = (Integer) cellValue;
+                System.out.println("Event ID: " + eventId);
+            } else if (cellValue instanceof String) {
+                eventName = (String) cellValue;
+                System.out.println("Event Name: " + eventName);
+            }
+
+            isPushed = true;
+            return button;
+        }
+
+        @Override
+        public Object getCellEditorValue() {
+            if (isPushed) {
+                // Perform action if button was pushed
+            }
+            isPushed = false;
+            return label;
+        }
+
+        @Override
+        public boolean stopCellEditing() {
+            isPushed = false;
+            return super.stopCellEditing();
+        }
+    }
+
+    // Inner class for ButtonRenderer
+    private class ButtonRenderer extends JButton implements TableCellRenderer {
+        public ButtonRenderer() {
+            setOpaque(true);
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            setText((value == null) ? "Enroll" : value.toString());
+            return this;
+        }
     }
 }

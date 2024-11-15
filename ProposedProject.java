@@ -7,6 +7,7 @@ import java.sql.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.Calendar;
 
 public class ProposedProject extends JFrame {
     private JTable projectTable;
@@ -82,7 +83,7 @@ public class ProposedProject extends JFrame {
 
         // Add search panel to the top of the frame
         add(searchPanel, BorderLayout.NORTH);
-        
+
         // Add button panel to the frame
         add(buttonPanel, BorderLayout.SOUTH);
     }
@@ -145,13 +146,33 @@ public class ProposedProject extends JFrame {
             String eventName = (String) tableModel.getValueAt(selectedRow, 0);
             String eventType = (String) tableModel.getValueAt(selectedRow, 1);
 
-            // Prompt for event date
-            String eventDateStr = JOptionPane.showInputDialog(
-                    this, "Enter the date for the event (YYYY-MM-DD):", "Event Date", JOptionPane.PLAIN_MESSAGE);
+            // Prompt for event date using separate dropdowns for day, month, and year
+            JPanel datePanel = new JPanel(new GridLayout(3, 2));
+            JComboBox<String> dayComboBox = new JComboBox<>(generateDays());
+            JComboBox<String> monthComboBox = new JComboBox<>(generateMonths());
+            JComboBox<String> yearComboBox = new JComboBox<>(generateYears());
 
-            if (eventDateStr != null && !eventDateStr.trim().isEmpty()) {
+            datePanel.add(new JLabel("Day:"));
+            datePanel.add(dayComboBox);
+            datePanel.add(new JLabel("Month:"));
+            datePanel.add(monthComboBox);
+            datePanel.add(new JLabel("Year:"));
+            datePanel.add(yearComboBox);
+
+            int option = JOptionPane.showConfirmDialog(
+                    this, datePanel, "Select Event Date", JOptionPane.OK_CANCEL_OPTION);
+
+            if (option == JOptionPane.OK_OPTION) {
+                String day = (String) dayComboBox.getSelectedItem();
+                String month = (String) monthComboBox.getSelectedItem();
+                String year = (String) yearComboBox.getSelectedItem();
+
                 try {
-                    LocalDate eventDate = LocalDate.parse(eventDateStr, DateTimeFormatter.ISO_LOCAL_DATE);
+                    // Convert month abbreviation to numeric month (Jan -> 1, Feb -> 2, etc.)
+                    int monthNumber = monthToNumber(month);
+
+                    LocalDate eventDate = LocalDate.of(
+                            Integer.parseInt(year), monthNumber, Integer.parseInt(day));
 
                     // Insert event into the events table
                     insertEventIntoDatabase(eventName, eventDate, eventType);
@@ -164,7 +185,7 @@ public class ProposedProject extends JFrame {
 
                     JOptionPane.showMessageDialog(this, "Event has been successfully scheduled!");
                 } catch (DateTimeParseException e) {
-                    JOptionPane.showMessageDialog(this, "Invalid date format. Please enter the date as YYYY-MM-DD.");
+                    JOptionPane.showMessageDialog(this, "Invalid date selection.");
                 }
             }
         } else {
@@ -229,5 +250,51 @@ public class ProposedProject extends JFrame {
             }
         }
     }
-}
 
+    // Helper methods to generate days, months, and years
+    private String[] generateDays() {
+        String[] days = new String[31];
+        for (int i = 0; i < 31; i++) {
+            days[i] = String.format("%02d", i + 1);
+        }
+        return days;
+    }
+
+    private String[] generateMonths() {
+        return new String[]{"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+    }
+
+    private String[] generateYears() {
+        int currentYear = LocalDate.now().getYear();
+        String[] years = new String[10]; // Example: range of 10 years
+        for (int i = 0; i < 10; i++) {
+            years[i] = String.valueOf(currentYear + i);
+        }
+        return years;
+    }
+
+    // Convert month abbreviation to numeric value
+    private int monthToNumber(String month) {
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.MONTH, getMonthIndex(month));
+        return cal.get(Calendar.MONTH) + 1; // Calendar.MONTH is zero-based
+    }
+
+    private int getMonthIndex(String month) {
+        switch (month) {
+            case "Jan": return 0;
+            case "Feb": return 1;
+            case "Mar": return 2;
+            case "Apr": return 3;
+            case "May": return 4;
+            case "Jun": return 5;
+            case "Jul": return 6;
+            case "Aug": return 7;
+            case "Sep": return 8;
+            case "Oct": return 9;
+            case "Nov": return 10;
+            case "Dec": return 11;
+            default: throw new IllegalArgumentException("Invalid month: " + month);
+        }
+    }
+}

@@ -10,23 +10,25 @@ public class AdminPage extends JFrame {
     private JButton answerQueryButton;
     private JButton managePastEventsButton;
     private JButton sendInfoToSponsorsButton;
+    private JButton registrationRequestsButton;
 
     public AdminPage(List<String> volunteers) {
         this.volunteers = volunteers;
-        
+
         setTitle("Admin Page");
-        setSize(400, 350); // Adjusted size to accommodate the new button
+        setSize(450, 400); // Adjusted size to accommodate the new button
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new FlowLayout());
 
-        // Create buttons with consistent size and appearance
+        // Create buttons
         manageEventsButton = createSizedButton("Manage Events", 150, 40);
         manageVolunteersButton = createSizedButton("Manage Volunteers", 150, 40);
         checkSubmittedProjectsButton = createSizedButton("Check Projects", 150, 40);
         answerQueryButton = createSizedButton("Answer Query", 150, 40);
         managePastEventsButton = createSizedButton("Manage Past Events", 150, 40);
         sendInfoToSponsorsButton = createSizedButton("Manage Sponsors", 180, 40);
-
+        registrationRequestsButton = createSizedButton("Registration Requests", 180, 40);
+        
         // Action for managing events
         manageEventsButton.addActionListener(e -> new ManageEventPage().setVisible(true));
         
@@ -44,6 +46,8 @@ public class AdminPage extends JFrame {
         
         // Action for sending info to sponsors
         sendInfoToSponsorsButton.addActionListener(e -> new SponsorPage().setVisible(true));
+        // Action for registration requests
+        registrationRequestsButton.addActionListener(e -> new AcceptRegistration().setVisible(true));
 
         // Add buttons to the frame
         add(manageEventsButton);
@@ -52,6 +56,7 @@ public class AdminPage extends JFrame {
         add(answerQueryButton);
         add(managePastEventsButton);
         add(sendInfoToSponsorsButton);
+        add(registrationRequestsButton);
     }
 
     // Helper method to create buttons with consistent size and appearance

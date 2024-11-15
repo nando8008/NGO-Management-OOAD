@@ -20,10 +20,11 @@ public class LoginPage extends JFrame {
         this.volunteers = volunteers;
 
         setTitle("Login Page");
-        setSize(300, 200);
+        setSize(300, 250);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new GridLayout(4, 2));
+        setLayout(new GridLayout(5, 2));
 
+        // UI components
         JLabel usernameLabel = new JLabel("Username:");
         usernameField = new JTextField();
         JLabel passwordLabel = new JLabel("Password:");
@@ -31,7 +32,9 @@ public class LoginPage extends JFrame {
 
         JButton loginButton = new JButton("Login");
         JButton guestButton = new JButton("Continue as Guest");
+        JButton registerButton = new JButton("Register");
 
+        // Action listeners
         loginButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 String username = usernameField.getText();
@@ -55,12 +58,18 @@ public class LoginPage extends JFrame {
             new PublicEventsPage(getEventsFromDatabase()).setVisible(true)
         );
 
+        registerButton.addActionListener(e -> 
+            new VolunteerRegister().setVisible(true)
+        );
+
+        // Add components to the frame
         add(usernameLabel);
         add(usernameField);
         add(passwordLabel);
         add(passwordField);
         add(loginButton);
         add(guestButton);
+        add(registerButton);
     }
 
     private int validateCredentials(String username, String password) {
@@ -135,5 +144,11 @@ public class LoginPage extends JFrame {
             DatabaseConnection.disconnect(conn);
         }
         return events;
+    }
+
+    public static void main(String[] args) {
+        List<Event> events = new ArrayList<>(); // Example event list
+        List<String> volunteers = new ArrayList<>(); // Example volunteer list
+        new LoginPage(events, volunteers).setVisible(true);
     }
 }
