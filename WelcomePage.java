@@ -19,14 +19,12 @@ public class WelcomePage extends JFrame {
     private JButton publicViewButton = new JButton("Donate");
     private DefaultTableModel tableModel;
     private JTable eventTable;
-    private List<String> volunteers;
     private Set<Integer> enrolledEventIds;
     private Set<String> enrolledEventNames;
     private int userId;
 
-    public WelcomePage(int userId, List<String> volunteersList) {
+    public WelcomePage(int userId) {
         this.userId = userId;
-        this.volunteers = volunteersList;
         this.enrolledEventIds = getUserEnrollmentsFromDatabase(userId);
         this.enrolledEventNames = new HashSet<>(); // Initialize the set for names
         setupUI();

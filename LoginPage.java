@@ -12,12 +12,9 @@ import java.util.ArrayList;
 public class LoginPage extends JFrame {
     private JTextField usernameField;
     private JPasswordField passwordField;
-    private List<String> volunteers;
-    private List<Event> events;
-
-    public LoginPage(List<Event> events, List<String> volunteers) {
-        this.events = events;
-        this.volunteers = volunteers;
+    
+    public LoginPage() {
+    
 
         setTitle("Login Page");
         setSize(300, 250);
@@ -43,9 +40,9 @@ public class LoginPage extends JFrame {
                 int userId = validateCredentials(username, password);
                 if (userId != -1) {
                     if (isAdmin(username)) {
-                        new AdminPage(volunteers).setVisible(true);
+                        new AdminPage().setVisible(true);
                     } else {
-                        new WelcomePage(userId, volunteers).setVisible(true);
+                        new WelcomePage(userId).setVisible(true);
                     }
                     dispose();
                 } else {
@@ -149,6 +146,6 @@ public class LoginPage extends JFrame {
     public static void main(String[] args) {
         List<Event> events = new ArrayList<>(); // Example event list
         List<String> volunteers = new ArrayList<>(); // Example volunteer list
-        new LoginPage(events, volunteers).setVisible(true);
+        new LoginPage().setVisible(true);
     }
 }

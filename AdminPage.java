@@ -3,7 +3,6 @@ import java.awt.*;
 import java.util.List;
 
 public class AdminPage extends JFrame {
-    private List<String> volunteers;
     private JButton manageEventsButton;
     private JButton manageVolunteersButton;
     private JButton checkSubmittedProjectsButton;
@@ -12,8 +11,8 @@ public class AdminPage extends JFrame {
     private JButton sendInfoToSponsorsButton;
     private JButton registrationRequestsButton;
 
-    public AdminPage(List<String> volunteers) {
-        this.volunteers = volunteers;
+    public AdminPage() {
+
 
         setTitle("Admin Page");
         setSize(450, 400); // Adjusted size to accommodate the new button
