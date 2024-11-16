@@ -3,9 +3,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.sql.*;
-import java.util.List;
 import java.util.Vector;
-import java.util.stream.Collectors;
 
 public class AcceptRegistration extends JFrame {
     private JTable table;
@@ -15,7 +13,7 @@ public class AcceptRegistration extends JFrame {
 
     public AcceptRegistration() {
         setTitle("Accept Registration Requests");
-        setSize(600, 400);
+        setSize(700, 400); // Updated size to accommodate the additional column
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout());
 
@@ -31,19 +29,21 @@ public class AcceptRegistration extends JFrame {
         searchPanel.add(searchButton);
 
         // Table
-        tableModel = new DefaultTableModel(new String[]{"Username", "Gender", "Date of Birth", "Action"}, 0) {
+        tableModel = new DefaultTableModel(new String[]{"Username", "Gender", "Date of Birth", "Accept", "Reject"}, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 3; // Only the "Action" column is editable
+                return column == 3 || column == 4; // Only the "Accept" and "Reject" columns are editable
             }
         };
 
         table = new JTable(tableModel);
         table.setRowHeight(30);
 
-        // Add custom renderer and editor for "Action" column
-        table.getColumn("Action").setCellRenderer(new ButtonRenderer());
-        table.getColumn("Action").setCellEditor(new ButtonEditor(new JCheckBox()));
+        // Add custom renderer and editor for "Accept" and "Reject" columns
+        table.getColumn("Accept").setCellRenderer(new ButtonRenderer());
+        table.getColumn("Accept").setCellEditor(new ButtonEditor(new JCheckBox(), true)); // Accept action
+        table.getColumn("Reject").setCellRenderer(new ButtonRenderer());
+        table.getColumn("Reject").setCellEditor(new ButtonEditor(new JCheckBox(), false)); // Reject action
 
         JScrollPane scrollPane = new JScrollPane(table);
 
@@ -68,7 +68,7 @@ public class AcceptRegistration extends JFrame {
                 String gender = rs.getString("gender");
                 Date dob = rs.getDate("date_of_birth");
 
-                tableModel.addRow(new Object[]{username, gender, dob, "Accept"});
+                tableModel.addRow(new Object[]{username, gender, dob, "Accept", "Reject"});
             }
 
         } catch (SQLException e) {
@@ -103,7 +103,7 @@ public class AcceptRegistration extends JFrame {
                 String gender = rs.getString("gender");
                 Date dob = rs.getDate("date_of_birth");
 
-                tableModel.addRow(new Object[]{username, gender, dob, "Accept"});
+                tableModel.addRow(new Object[]{username, gender, dob, "Accept", "Reject"});
             }
 
         } catch (SQLException e) {
@@ -136,7 +136,25 @@ public class AcceptRegistration extends JFrame {
         }
     }
 
-    // Button renderer for the "Action" column
+    private void rejectRegistration(String username) {
+        String deleteQuery = "DELETE FROM user_pending_login_credentials WHERE username = ?";
+
+        try (Connection conn = DatabaseConnection.connect();
+             PreparedStatement stmt = conn.prepareStatement(deleteQuery)) {
+
+            stmt.setString(1, username);
+            stmt.executeUpdate();
+
+            JOptionPane.showMessageDialog(this, "User rejected successfully.");
+            loadPendingRegistrations(); // Refresh the table
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error rejecting registration.");
+        }
+    }
+
+    // Button renderer for the "Action" columns
     private class ButtonRenderer extends JButton implements TableCellRenderer {
         public ButtonRenderer() {
             setOpaque(true);
@@ -149,15 +167,17 @@ public class AcceptRegistration extends JFrame {
         }
     }
 
-    // Button editor for the "Action" column
+    // Button editor for the "Action" columns
     private class ButtonEditor extends DefaultCellEditor {
         private JButton button;
         private String label;
         private boolean clicked;
         private String username;
+        private boolean isAcceptAction;
 
-        public ButtonEditor(JCheckBox checkBox) {
+        public ButtonEditor(JCheckBox checkBox, boolean isAcceptAction) {
             super(checkBox);
+            this.isAcceptAction = isAcceptAction;
             button = new JButton();
             button.setOpaque(true);
             button.addActionListener(e -> fireEditingStopped());
@@ -175,7 +195,11 @@ public class AcceptRegistration extends JFrame {
         @Override
         public Object getCellEditorValue() {
             if (clicked) {
-                acceptRegistration(username);
+                if (isAcceptAction) {
+                    acceptRegistration(username);
+                } else {
+                    rejectRegistration(username);
+                }
             }
             clicked = false;
             return label;
